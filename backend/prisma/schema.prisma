@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         String   @default("seller")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  vehicles Vehicle[]
+}
+
+model Vehicle {
+  id            String        @id @default(uuid())
+  merchant      User          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId    String
+  make          String
+  model         String
+  year          Int
+  purchasePrice Int
+  salePrice     Int?
+  mileage       Int
+  status        String        @default("stock")
+  mainPhotoUrl  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  costs  Cost[]
+  photos Photo[]
+
+  @@index([merchantId])
+  @@index([status])
+  @@index([make])
+}
+
+model Cost {
+  id         String       @id @default(uuid())
+  vehicle    Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicleId  String
+  label      String
+  amount     Int
+  category   String
+  incurredAt DateTime
+  createdAt  DateTime     @default(now())
+
+  @@index([vehicleId])
+  @@index([category])
+}
+
+model Photo {
+  id        String   @id @default(uuid())
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicleId String
+  url       String
+  position  Int
+  createdAt DateTime @default(now())
+
+  @@unique([vehicleId, position])
+  @@index([vehicleId])
+}
