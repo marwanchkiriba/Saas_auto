@@ -18,6 +18,7 @@ const vehicleBodySchema = z.object({
   mileage: z.coerce.number().int().nonnegative(),
   status: z.enum(statusEnum).default("stock"),
   mainPhotoUrl: z.string().url().optional(),
+  photos: z.array(z.string().url()).optional(),
 });
 
 const querySchema = z.object({
@@ -43,7 +44,7 @@ router.get("/", async (req: AuthRequest, res) => {
   const vehicles = await prisma.vehicle.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { costs: true },
+    include: { costs: true, photos: { orderBy: { position: "asc" } } },
   });
   const data = vehicles.map((v) => {
     const totals = computeTotals(v, v.costs);
@@ -56,7 +57,7 @@ router.get("/:id", async (req: AuthRequest, res) => {
   const id = req.params.id as string;
   const vehicle = await prisma.vehicle.findFirst({
     where: { id, merchantId: req.user!.id },
-    include: { costs: true, photos: true },
+    include: { costs: true, photos: { orderBy: { position: "asc" } } },
   });
   if (!vehicle) return res.status(404).json({ error: "Not found" });
   const totals = computeTotals(vehicle, vehicle.costs);
@@ -68,7 +69,7 @@ router.post("/", async (req: AuthRequest, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const { salePrice, mainPhotoUrl, ...rest } = parsed.data;
+  const { salePrice, mainPhotoUrl, photos, ...rest } = parsed.data;
   const vehicle = await prisma.vehicle.create({
     data: {
       merchantId: req.user!.id,
@@ -76,8 +77,24 @@ router.post("/", async (req: AuthRequest, res) => {
       salePrice: salePrice ?? null,
       mainPhotoUrl: mainPhotoUrl ?? null,
     },
+    include: { costs: true, photos: true },
   });
-  res.status(201).json({ vehicle });
+
+  if (photos && photos.length > 0) {
+    await prisma.photo.createMany({
+      data: photos.map((url, idx) => ({
+        vehicleId: vehicle.id,
+        url,
+        position: idx,
+      })),
+    });
+  }
+
+  const vehicleWithPhotos = await prisma.vehicle.findUnique({
+    where: { id: vehicle.id },
+    include: { costs: true, photos: { orderBy: { position: "asc" } } },
+  });
+  res.status(201).json({ vehicle: vehicleWithPhotos ?? vehicle });
 });
 
 router.put("/:id", async (req: AuthRequest, res) => {
@@ -91,7 +108,7 @@ router.put("/:id", async (req: AuthRequest, res) => {
   });
   if (!existing) return res.status(404).json({ error: "Not found" });
 
-  const { salePrice, mainPhotoUrl, ...rest } = parsed.data;
+  const { salePrice, mainPhotoUrl, photos, ...rest } = parsed.data;
 
   const data: Prisma.VehicleUpdateInput = {};
   if (rest.make !== undefined) data.make = rest.make;
@@ -102,10 +119,17 @@ router.put("/:id", async (req: AuthRequest, res) => {
   if (rest.status !== undefined) data.status = rest.status;
   if (salePrice !== undefined) data.salePrice = salePrice;
   if (mainPhotoUrl !== undefined) data.mainPhotoUrl = mainPhotoUrl;
+  if (photos !== undefined) {
+    data.photos = {
+      deleteMany: { vehicleId: existing.id },
+      create: photos.map((url, idx) => ({ url, position: idx })),
+    };
+  }
 
   const vehicle = await prisma.vehicle.update({
     where: { id: existing.id },
     data,
+    include: { costs: true, photos: true },
   });
   res.json({ vehicle });
 });

@@ -3,15 +3,42 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, getToken } from "@/lib/api";
-import { NavBar } from "@/components/NavBar";
-import { GlassCard } from "@/components/GlassCard";
-import { QuickButton } from "@/components/QuickButton";
-import { AreaChart, BarChart3, TrendingUp, PlusCircle, PackageSearch, Archive as ArchiveIcon } from "lucide-react";
+import {
+  Car,
+  TrendingUp,
+  DollarSign,
+  PlusCircle,
+  Package,
+  Archive as ArchiveIcon,
+  ArrowRight,
+  Gauge,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 type DashboardData = {
   totalVehicles: number;
   statusBreakdown: { status: string; count: number }[];
-  totals: { purchase: number; sale: number; cost: number; potentialMargin: number };
+  totals: {
+    purchase: number;
+    sale: number;
+    cost: number;
+    potentialMargin: number;
+  };
 };
 
 type MeResponse = { user: { email: string; name: string | null } };
@@ -22,7 +49,9 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<"all" | "day" | "week" | "month">("all");
+  const [period, setPeriod] = useState<"all" | "day" | "week" | "month">(
+    "all"
+  );
 
   useEffect(() => {
     const token = getToken();
@@ -32,6 +61,7 @@ export default function DashboardPage() {
     }
     (async () => {
       try {
+        setLoading(true);
         const meResp = await apiFetch<MeResponse>("/api/me");
         const qs = period === "all" ? "" : `?period=${period}`;
         const dash = await apiFetch<DashboardData>(`/api/dashboard${qs}`);
@@ -47,8 +77,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-slate-600">Chargement...</p>
+      <div className="flex items-center justify-center h-[80vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <p className="text-muted-foreground">Chargement...</p>
+        </div>
       </div>
     );
   }
@@ -58,189 +91,271 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-black">
-      <NavBar />
+    <div className="container mx-auto p-6 lg:p-8 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div className="mb-4 sm:mb-0">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Bonjour, <span className="text-primary">{me?.name || "Utilisateur"}</span>
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Voici un aperçu de votre parc automobile
+          </p>
+        </div>
+        <Select value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Période" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes périodes</SelectItem>
+            <SelectItem value="day">Dernier jour</SelectItem>
+            <SelectItem value="week">Dernière semaine</SelectItem>
+            <SelectItem value="month">Dernier mois</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-6 py-6 space-y-6">
-        {me && (
-          <div className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-cyan-500/20 via-blue-600/10 to-slate-900 border border-slate-800 px-6 py-4 shadow-xl shadow-cyan-500/10">
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">Pilote connecté</p>
-              <p className="text-xl font-semibold text-white">
-                {me.name || "Compte"} · {me.email}
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-slate-300">Période</span>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value as typeof period)}
-                className="rounded-full border border-slate-700 bg-slate-900 text-slate-100 px-3 py-2 text-sm shadow-inner"
-              >
-                <option value="all">Toutes périodes</option>
-                <option value="day">Dernier jour</option>
-                <option value="week">Dernière semaine</option>
-                <option value="month">Dernier mois</option>
-              </select>
-            </div>
-          </div>
-        )}
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <StatCard
+          title="Véhicules"
+          value={data?.statusBreakdown?.filter(s => s.status !== "sold").reduce((acc, s) => acc + s.count, 0) ?? 0}
+          icon={<Car className="h-5 w-5" />}
+          description="en stock / préparation"
+          accent
+        />
+        <StatCard
+          title="Valeur du parc"
+          value={formatMoney(data?.totals.purchase ?? 0)}
+          icon={<DollarSign className="h-5 w-5" />}
+          description="investissement total"
+        />
+        <StatCard
+          title="Coûts totaux"
+          value={formatMoney(data?.totals.cost ?? 0)}
+          icon={<Gauge className="h-5 w-5" />}
+          description="achat + frais"
+        />
+        <StatCard
+          title="Marge potentielle"
+          value={formatMoney(data?.totals.potentialMargin ?? 0)}
+          icon={<TrendingUp className="h-5 w-5" />}
+          description="profit estimé"
+          positive={(data?.totals.potentialMargin ?? 0) > 0}
+        />
+      </div>
 
-        <section className="grid gap-3 md:grid-cols-3">
-          <Card title="Véhicules" value={data?.totalVehicles ?? 0} accent="from-cyan-400 to-blue-500" icon={<BarChart3 className="h-5 w-5 text-cyan-200" />} />
-          <Card title="Valeur du parc auto" value={formatMoney(data?.totals.purchase ?? 0)} accent="from-emerald-400 to-teal-500" icon={<AreaChart className="h-5 w-5 text-emerald-200" />} />
-          <Card title="Marge effectuée" value={formatMoney(data?.totals.potentialMargin ?? 0)} accent="from-pink-500 to-rose-500" icon={<TrendingUp className="h-5 w-5 text-rose-200" />} />
-        </section>
+      {/* Main Grid */}
+      <div className="grid gap-6 lg:grid-cols-7">
+        {/* Quick Actions */}
+        <Card className="lg:col-span-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="h-2 w-2 bg-primary rounded-full" />
+              Actions rapides
+            </CardTitle>
+            <CardDescription>
+              Accédez rapidement aux fonctionnalités principales
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-3">
+            <ActionCard
+              href="/vehicles/new"
+              icon={<PlusCircle className="h-6 w-6" />}
+              title="Ajouter"
+              description="Nouveau véhicule"
+            />
+            <ActionCard
+              href="/stock"
+              icon={<Package className="h-6 w-6" />}
+              title="Stock"
+              description="Voir les véhicules"
+            />
+            <ActionCard
+              href="/archive"
+              icon={<ArchiveIcon className="h-6 w-6" />}
+              title="Archive"
+              description="Véhicules vendus"
+            />
+          </CardContent>
+        </Card>
 
-        <GlassCard className="p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">Actions rapides</p>
-              <h2 className="text-lg font-semibold text-white">Commandes principales</h2>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-300">
-              <span>Période</span>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value as typeof period)}
-                className="rounded-full border border-slate-700 bg-slate-900 text-slate-100 px-3 py-2 text-sm shadow-inner"
-              >
-                <option value="all">Toutes</option>
-                <option value="day">Jour</option>
-                <option value="week">Semaine</option>
-                <option value="month">Mois</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid gap-2 md:grid-cols-3">
-            <QuickButton href="/vehicles/new" label="Ajouter un véhicule" icon={<PlusCircle className="h-4 w-4" />} />
-            <QuickButton href="/stock" label="Voir le stock" icon={<PackageSearch className="h-4 w-4" />} />
-            <QuickButton href="/archive" label="Archive vendus" icon={<ArchiveIcon className="h-4 w-4" />} />
-          </div>
-        </GlassCard>
+        {/* Status Breakdown */}
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="h-2 w-2 bg-primary rounded-full" />
+              Répartition
+            </CardTitle>
+            <CardDescription>Statuts des véhicules</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data?.statusBreakdown && data.statusBreakdown.length > 0 ? (
+              <div className="space-y-4">
+                {data.statusBreakdown.map((s) => (
+                  <div key={s.status} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-3 w-3 rounded-full ${getStatusColor(s.status)}`} />
+                      <span className="capitalize font-medium">{translateStatus(s.status)}</span>
+                    </div>
+                    <span className="text-2xl font-bold">{s.count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Aucun véhicule pour l'instant</p>
+                <Button asChild variant="link" className="mt-2">
+                  <Link href="/vehicles/new">Ajouter un véhicule</Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <GlassCard className="p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Répartition statuts</h2>
-          </div>
-          <StatusChart breakdown={data?.statusBreakdown ?? []} />
-          <MiniBarChart breakdown={data?.statusBreakdown ?? []} />
-        </GlassCard>
-
-        <section className="grid gap-3 md:grid-cols-2">
-          <GlassCard className="p-5">
-            <h2 className="text-lg font-semibold text-white mb-4">Statuts</h2>
-            <div className="space-y-3">
-              {data?.statusBreakdown.map((s) => (
-                <div key={s.status} className="flex items-center justify-between text-slate-200">
-                  <span className="capitalize">{s.status}</span>
-                  <span className="font-semibold">{s.count}</span>
+        {/* Sales Summary */}
+        <Card className="lg:col-span-7">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="h-2 w-2 bg-primary rounded-full" />
+              Synthèse financière
+            </CardTitle>
+            <CardDescription>Résumé des coûts et ventes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border/50">
+                <div>
+                  <p className="text-sm text-muted-foreground">Coûts totaux</p>
+                  <p className="text-sm text-muted-foreground/70">achat + frais</p>
                 </div>
-              ))}
-              {data?.statusBreakdown.length === 0 && (
-                <p className="text-sm text-slate-400">Aucun véhicule pour l’instant.</p>
-              )}
+                <p className="text-2xl font-bold">{formatMoney(data?.totals.cost ?? 0)}</p>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div>
+                  <p className="text-sm text-muted-foreground">Gains de ventes</p>
+                  <p className="text-sm text-muted-foreground/70">revenus réalisés</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">{formatMoney(data?.totals.sale ?? 0)}</p>
+              </div>
             </div>
-          </GlassCard>
-          <GlassCard className="p-5 space-y-3">
-            <h2 className="text-lg font-semibold text-white mb-4">Synthèse coûts / ventes</h2>
-            <Item label="Coûts totaux (achat + frais)" value={formatMoney(data?.totals.cost ?? 0)} />
-            <Item label="Gains de ventes" value={formatMoney(data?.totals.sale ?? 0)} />
-          </GlassCard>
-        </section>
-      </main>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
 
 function ErrorFallback({ message }: { message: string | null }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-3">
-        <p className="text-red-600 font-medium">Erreur: {message}</p>
-        <a href="/login" className="text-sm text-slate-700 underline">
-          Revenir à la connexion
-        </a>
-      </div>
+    <div className="container mx-auto p-6 lg:p-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-destructive">Erreur</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">{message}</p>
+          <Button asChild>
+            <a href="/login">Revenir à la connexion</a>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function Card({ title, value, accent, icon }: { title: string; value: string | number; accent: string; icon?: React.ReactNode }) {
+function StatCard({
+  title,
+  value,
+  icon,
+  description,
+  accent,
+  positive,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  description: string;
+  accent?: boolean;
+  positive?: boolean;
+}) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur shadow-xl shadow-black/30 p-5 space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-300">{title}</p>
+    <Card className={accent ? "border-primary/30 bg-primary/5" : ""}>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className={`p-2 rounded-lg ${accent ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
+            {icon}
+          </span>
+        </div>
+        <div className="space-y-1">
+          <p className={`text-3xl font-bold ${positive ? "text-green-500" : ""}`}>{value}</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">{title}</p>
+          <p className="text-xs text-muted-foreground/70">{description}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActionCard({
+  href,
+  icon,
+  title,
+  description,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col items-center gap-3 p-6 rounded-xl border border-border/50 bg-secondary/30 hover:bg-secondary/50 hover:border-primary/30 transition-all duration-300"
+    >
+      <span className="p-3 rounded-full bg-secondary text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-all duration-300">
         {icon}
+      </span>
+      <div className="text-center">
+        <p className="font-semibold">{title}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      <p className="text-3xl font-semibold text-white">{value}</p>
-      <div className={`h-1 w-full rounded-full bg-gradient-to-r ${accent}`} />
-    </div>
+      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+    </Link>
   );
 }
 
-function Item({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-sm text-slate-200">
-      <span>{label}</span>
-      <span className="font-semibold text-white">{value}</span>
-    </div>
-  );
+function getStatusColor(status: string) {
+  switch (status.toLowerCase()) {
+    case "stock":
+      return "bg-green-500";
+    case "preparation":
+    case "préparation":
+      return "bg-yellow-500";
+    case "sold":
+    case "vendu":
+      return "bg-blue-500";
+    default:
+      return "bg-gray-500";
+  }
+}
+
+function translateStatus(status: string) {
+  switch (status.toLowerCase()) {
+    case "stock":
+      return "En stock";
+    case "preparation":
+      return "En préparation";
+    case "sold":
+      return "Vendu";
+    default:
+      return status;
+  }
 }
 
 function formatMoney(cents: number) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cents / 100);
-}
-
-function StatusChart({ breakdown }: { breakdown: { status: string; count: number }[] }) {
-  const total = breakdown.reduce((acc, b) => acc + b.count, 0);
-  if (total === 0) {
-    return <p className="text-sm text-slate-400">Aucune donnée.</p>;
-  }
-  return (
-    <div className="space-y-3">
-      {breakdown.map((b) => {
-        const pct = total ? Math.round((b.count / total) * 100) : 0;
-        return (
-          <div key={b.status} className="space-y-1">
-            <div className="flex items-center justify-between text-sm text-slate-200">
-              <span className="capitalize">{b.status}</span>
-              <span>
-                {b.count} · {pct}%
-              </span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-slate-800">
-              <div
-                className="h-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"
-                style={{ width: `${Math.max(pct, 4)}%` }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function MiniBarChart({ breakdown }: { breakdown: { status: string; count: number }[] }) {
-  const max = breakdown.reduce((acc, b) => Math.max(acc, b.count), 0);
-  const colors: Record<string, string> = {
-    stock: "bg-blue-500",
-    preparation: "bg-amber-500",
-    sold: "bg-emerald-500",
-  };
-  if (breakdown.length === 0) return null;
-  return (
-    <div className="grid grid-cols-6 gap-2 items-end h-28">
-      {breakdown.map((b) => {
-        const height = max ? Math.max((b.count / max) * 100, 8) : 0;
-        return (
-          <div key={b.status} className="flex flex-col items-center gap-1">
-            <div className={`w-full rounded-md ${colors[b.status] ?? "bg-slate-400"}`} style={{ height: `${height}%` }} />
-            <span className="text-xs text-slate-300 capitalize">{b.status}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
 }

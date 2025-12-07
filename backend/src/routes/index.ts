@@ -6,6 +6,7 @@ import { dashboardRouter } from "./dashboard";
 import { meRouter } from "./me";
 import { photosRouter } from "./photos";
 import { exportRouter } from "./export";
+import { uploadRouter } from "./upload";
 
 export const router = Router();
 
@@ -20,3 +21,4 @@ router.use("/vehicles/:vehicleId/photos", photosRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/me", meRouter);
 router.use("/export", exportRouter);
+router.use("/upload", uploadRouter);

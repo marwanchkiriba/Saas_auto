@@ -1,10 +1,21 @@
-// Signup page
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch, saveToken } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { User, Mail, Lock, ArrowRight } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -33,58 +44,120 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-black flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 shadow-2xl shadow-black/40 backdrop-blur p-8 space-y-6">
-        <div className="space-y-2 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">SaaS Auto</p>
-          <h1 className="text-2xl font-semibold text-white">Inscription</h1>
-          <p className="text-sm text-slate-300">Crée ton compte marchand</p>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4">
+      {/* Animated Background */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse-glow" />
+        <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow delay-1000" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
+      </div>
+
+      <div className="w-full max-w-md animate-fade-in">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Parc<span className="text-primary">Master</span>
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Créez votre compte gratuitement
+          </p>
         </div>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200">Nom</label>
-            <input
-              type="text"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 text-slate-100 px-3 py-2 focus:border-cyan-500 focus:outline-none"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200">Email</label>
-            <input
-              type="email"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 text-slate-100 px-3 py-2 focus:border-cyan-500 focus:outline-none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200">Mot de passe</label>
-            <input
-              type="password"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 text-slate-100 px-3 py-2 focus:border-cyan-500 focus:outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 py-2.5 font-semibold shadow-lg shadow-cyan-500/30 hover:scale-[1.01] transition disabled:opacity-60"
-            disabled={loading}
-          >
-            {loading ? "Création..." : "Créer un compte"}
-          </button>
-        </form>
-        <p className="text-center text-sm text-slate-300">
-          Déjà inscrit ?{" "}
-          <Link href="/login" className="text-cyan-300 font-semibold hover:underline">
-            Se connecter
-          </Link>
-        </p>
+
+        <Card className="border-border/50">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-2xl font-bold">Inscription</CardTitle>
+            <CardDescription>
+              Remplissez le formulaire pour créer votre compte
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Nom complet
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    placeholder="Jean Dupont"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Mot de passe
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+              <Button
+                type="submit"
+                variant="luxury"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Création...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Créer mon compte
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="justify-center border-t border-border/30 pt-6">
+            <p className="text-sm text-muted-foreground">
+              Déjà un compte?{" "}
+              <Link
+                href="/login"
+                className="text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                Se connecter
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

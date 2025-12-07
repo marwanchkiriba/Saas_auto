@@ -1,26 +1,205 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ===== LUXURY AUTOMOTIVE DESIGN SYSTEM ===== */
+/* Inspired by premium sports cars: deep blacks, carbon fiber textures, 
+   and accent colors reminiscent of brake calipers and LED headlights */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  /* Luxury Dark Foundation */
+  --color-background: hsl(220 15% 5%);
+  --color-foreground: hsl(0 0% 95%);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Premium Carbon & Chrome */
+  --color-card: hsl(220 15% 8%);
+  --color-card-foreground: hsl(0 0% 95%);
+
+  --color-popover: hsl(220 15% 8%);
+  --color-popover-foreground: hsl(0 0% 95%);
+
+  /* Racing Red Accents (Ferrari/Porsche inspired) */
+  --color-primary: hsl(0 85% 55%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  /* Brushed Titanium */
+  --color-secondary: hsl(220 10% 15%);
+  --color-secondary-foreground: hsl(0 0% 90%);
+
+  /* Muted Steel */
+  --color-muted: hsl(220 10% 12%);
+  --color-muted-foreground: hsl(220 10% 55%);
+
+  /* Chrome Accent */
+  --color-accent: hsl(220 10% 18%);
+  --color-accent-foreground: hsl(0 0% 95%);
+
+  /* Warning Red */
+  --color-destructive: hsl(0 70% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  /* Carbon Fiber Lines */
+  --color-border: hsl(220 10% 18%);
+  --color-input: hsl(220 10% 15%);
+  --color-ring: hsl(0 85% 55%);
+
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+
+  /* Animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-slide-up: slide-up 0.4s ease-out forwards;
+  --animate-scale-in: scale-in 0.3s ease-out forwards;
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+
+  /* Shadows */
+  --shadow-glow: 0 0 20px hsla(0, 85%, 55%, 0.3);
+  --shadow-glow-lg: 0 0 40px hsla(0, 85%, 55%, 0.4);
+  --shadow-luxury: 0 4px 30px hsla(0, 0%, 0%, 0.5);
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px hsla(0, 85%, 55%, 0.2);
+    }
+
+    50% {
+      box-shadow: 0 0 40px hsla(0, 85%, 55%, 0.4);
+    }
   }
 }
 
+/* ===== BASE STYLES ===== */
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(220, 15%, 8%);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(220, 10%, 25%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(0, 85%, 55%);
+}
+
+/* Selection Style */
+::selection {
+  background: hsla(0, 85%, 55%, 0.3);
+  color: hsl(0, 0%, 100%);
+}
+
+/* ===== UTILITY CLASSES ===== */
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.glow {
+  box-shadow: 0 0 20px hsla(0, 85%, 55%, 0.3);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 30px hsla(0, 85%, 55%, 0.4);
+}
+
+.glass {
+  background: hsla(220, 15%, 10%, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsla(220, 10%, 25%, 0.5);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, hsl(0, 85%, 60%) 0%, hsl(30, 90%, 60%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
