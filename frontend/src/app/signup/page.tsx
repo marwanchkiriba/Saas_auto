@@ -1,17 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 import { apiFetch, saveToken } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,9 +19,9 @@ import { User, Mail, Lock, ArrowRight } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +30,9 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<{ token: string }>("/api/auth/signup", {
+      const data = await apiFetch<{ token: string }>("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ name, email, password }),
       });
       saveToken(data.token);
       router.push("/dashboard");
@@ -47,8 +47,8 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4">
       {/* Animated Background */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow delay-1000" />
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-primary/15 rounded-full blur-3xl animate-pulse-glow" />
+        <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow delay-700" />
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
       </div>
 
@@ -59,15 +59,15 @@ export default function SignupPage() {
             Parc<span className="text-primary">Master</span>
           </h1>
           <p className="text-muted-foreground mt-2">
-            Créez votre compte gratuitement
+            Rejoignez les professionnels de l&apos;automobile
           </p>
         </div>
 
         <Card className="border-border/50">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl font-bold">Inscription</CardTitle>
+            <CardTitle className="text-2xl font-bold">Créer un compte</CardTitle>
             <CardDescription>
-              Remplissez le formulaire pour créer votre compte
+              Commencez à gérer votre parc automobile dès maintenant
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -80,6 +80,7 @@ export default function SignupPage() {
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="name"
+                    type="text"
                     placeholder="Jean Dupont"
                     required
                     value={name}
@@ -114,6 +115,7 @@ export default function SignupPage() {
                   <Input
                     id="password"
                     type="password"
+                    placeholder="Minimum 6 caractères"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -135,7 +137,7 @@ export default function SignupPage() {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Création...
+                    Création en cours...
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">

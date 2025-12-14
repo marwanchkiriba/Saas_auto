@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ConditionalNavBar } from "@/components/ConditionalNavBar";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
+          <AnimatedBackground />
           <ConditionalNavBar />
           <main className="relative">{children}</main>
         </ThemeProvider>

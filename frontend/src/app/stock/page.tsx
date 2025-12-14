@@ -199,103 +199,121 @@ export default function StockPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden w-[80px] sm:table-cell">
-                    Photo
-                  </TableHead>
                   <TableHead>Véhicule</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">
-                    Coût total
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell text-right">
-                    Marge
-                  </TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead>Kilométrage</TableHead>
+                  <TableHead>Prix d&apos;achat</TableHead>
+                  <TableHead>Prix de vente</TableHead>
+                  <TableHead>Marge</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((v) => (
-                  <TableRow key={v.id} className="group">
-                    <TableCell className="hidden sm:table-cell">
-                      {v.mainPhotoUrl ? (
-                        <Image
-                          alt={`${v.make} ${v.model}`}
-                          className="aspect-square rounded-lg object-cover border border-border/50"
-                          height={56}
-                          src={v.mainPhotoUrl}
-                          width={56}
-                        />
-                      ) : (
-                        <div className="w-14 h-14 bg-secondary rounded-lg flex items-center justify-center">
-                          <Car className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                      )}
-                    </TableCell>
+                  <TableRow
+                    key={v.id}
+                    className="group cursor-pointer"
+                    onClick={() => router.push(`/vehicles/${v.id}`)}
+                  >
                     <TableCell>
-                      <div
-                        onClick={() => router.push(`/vehicles/${v.id}`)}
-                        className="cursor-pointer"
-                      >
-                        <p className="font-semibold group-hover:text-primary transition-colors">
-                          {v.make} {v.model}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {v.year} • {v.mileage.toLocaleString("fr-FR")} km
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {v.mainPhotoUrl ? (
+                          <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-border/50">
+                            <Image
+                              alt={`${v.make} ${v.model}`}
+                              src={v.mainPhotoUrl}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-12 w-12 rounded-lg bg-secondary flex items-center justify-center">
+                            <Car className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold">
+                            {v.make} {v.model}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{v.year}</p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={v.status} />
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-right font-medium">
-                      {formatMoney(v.totalCost)}
+                    <TableCell>{v.mileage.toLocaleString("fr-FR")} km</TableCell>
+                    <TableCell>{formatMoney(v.purchasePrice)}</TableCell>
+                    <TableCell>
+                      {v.salePrice != null ? formatMoney(v.salePrice) : "—"}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell text-right">
+                    <TableCell>
                       {v.margin != null ? (
-                        <span className={v.margin >= 0 ? "text-green-500" : "text-red-500"}>
+                        <span
+                          className={
+                            v.margin >= 0 ? "text-green-500" : "text-red-500"
+                          }
+                        >
+                          {v.margin >= 0 ? "+" : ""}
                           {formatMoney(v.margin)}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        "—"
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
-                            aria-haspopup="true"
-                            size="icon"
                             variant="ghost"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            size="icon"
+                            onClick={(e) => e.stopPropagation()}
+                            disabled={savingId === v.id}
                           >
-                            <MoreHorizontal className="h-4 w-4" />
+                            {savingId === v.id ? (
+                              <div className="h-4 w-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                            ) : (
+                              <MoreHorizontal className="h-4 w-4" />
+                            )}
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="glass">
+                        <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => router.push(`/vehicles/${v.id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/vehicles/${v.id}`);
+                            }}
                           >
-                            Voir / Modifier
+                            Voir les détails
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => markSold(v.id, v.salePrice)}
-                            disabled={savingId === v.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(
+                                `http://localhost:4000/api/export/${v.id}/pdf`,
+                                "_blank"
+                              );
+                            }}
+                          >
+                            Exporter PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markSold(v.id, v.salePrice);
+                            }}
                           >
                             Marquer vendu
                           </DropdownMenuItem>
-                          <a
-                            href={`http://localhost:4000/api/export/${v.id}/pdf`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <DropdownMenuItem>Export PDF</DropdownMenuItem>
-                          </a>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => deleteVehicle(v.id)}
-                            disabled={savingId === v.id}
+                            className="text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteVehicle(v.id);
+                            }}
                           >
                             Supprimer
                           </DropdownMenuItem>
@@ -313,25 +331,36 @@ export default function StockPage() {
   );
 }
 
+function formatMoney(cents: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; text: string; label: string }> = {
     stock: { bg: "bg-green-500/20", text: "text-green-500", label: "En stock" },
-    preparation: { bg: "bg-yellow-500/20", text: "text-yellow-500", label: "Préparation" },
+    preparation: {
+      bg: "bg-yellow-500/20",
+      text: "text-yellow-500",
+      label: "Préparation",
+    },
     sold: { bg: "bg-blue-500/20", text: "text-blue-500", label: "Vendu" },
   };
-  const c = config[status.toLowerCase()] || { bg: "bg-gray-500/20", text: "text-gray-500", label: status };
-
+  const c = config[status.toLowerCase()] || {
+    bg: "bg-gray-500/20",
+    text: "text-gray-500",
+    label: status,
+  };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${c.bg} ${c.text}`}
+    >
       <span className={`h-1.5 w-1.5 rounded-full ${c.text.replace("text-", "bg-")}`} />
       {c.label}
     </span>
   );
-}
-
-function formatMoney(cents: number) {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
 }

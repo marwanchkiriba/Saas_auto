@@ -1,12 +1,12 @@
-import type { Config } from "tailwindcss"
+import type { Config } from "tailwindcss";
 
-const config = {
+export default {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
   prefix: "",
   theme: {
@@ -59,13 +59,11 @@ const config = {
         sm: "var(--radius-sm)",
       },
       boxShadow: {
-        'glow': 'var(--shadow-glow)',
-        'glow-lg': 'var(--shadow-glow-lg)',
-        'luxury': 'var(--shadow-luxury)',
+        glow: "var(--shadow-glow)",
+        "glow-lg": "var(--shadow-glow-lg)",
+        luxury: "var(--shadow-luxury)",
       },
     },
   },
   plugins: [],
-} satisfies Config
-
-export default config
+} satisfies Config;

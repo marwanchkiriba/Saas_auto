@@ -60,20 +60,76 @@ router.get("/", async (req: AuthRequest, res) => {
       merchantId: userId,
       ...(dateFilter ? { createdAt: { gte: dateFilter } } : {}),
     },
-    select: { id: true, purchasePrice: true, salePrice: true },
+    select: { id: true, purchasePrice: true, salePrice: true, status: true, updatedAt: true },
   });
 
   let totalCost = 0;
   let totalPotentialMargin = 0;
 
+  // Données des véhicules vendus
+  let totalRevenue = 0; // Chiffre d'affaires réel
+  let totalRealMargin = 0; // Marge réelle
+  let totalSoldCosts = 0; // Coûts des véhicules vendus
+
   for (const v of vehicles) {
     const variableCosts = costMap.get(v.id) ?? 0;
     const costTotal = v.purchasePrice + variableCosts;
     totalCost += costTotal;
-    if (v.salePrice != null) {
+
+    if (v.status === "sold" && v.salePrice != null) {
+      // Véhicule vendu - marge réelle
+      totalRevenue += v.salePrice;
+      totalSoldCosts += costTotal;
+      totalRealMargin += v.salePrice - costTotal;
+    } else if (v.salePrice != null) {
+      // Véhicule non vendu avec prix de vente - marge potentielle
       totalPotentialMargin += v.salePrice - costTotal;
     }
   }
+
+  // Grouper les ventes par mois pour le graphique
+  const soldVehicles = await prisma.vehicle.findMany({
+    where: {
+      merchantId: userId,
+      status: "sold",
+      salePrice: { not: null },
+    },
+    select: {
+      id: true,
+      purchasePrice: true,
+      salePrice: true,
+      updatedAt: true
+    },
+    orderBy: { updatedAt: "asc" },
+  });
+
+  // Calculer les données mensuelles
+  const monthlyData: Record<string, { revenue: number; costs: number; margin: number }> = {};
+
+  for (const v of soldVehicles) {
+    const monthKey = v.updatedAt.toISOString().slice(0, 7); // YYYY-MM
+    const variableCosts = costMap.get(v.id) ?? 0;
+    const costTotal = v.purchasePrice + variableCosts;
+    const revenue = v.salePrice ?? 0;
+    const margin = revenue - costTotal;
+
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { revenue: 0, costs: 0, margin: 0 };
+    }
+    monthlyData[monthKey].revenue += revenue;
+    monthlyData[monthKey].costs += costTotal;
+    monthlyData[monthKey].margin += margin;
+  }
+
+  // Convertir en tableau trié
+  const salesHistory = Object.entries(monthlyData)
+    .map(([month, data]) => ({
+      month,
+      revenue: data.revenue,
+      costs: data.costs,
+      margin: data.margin,
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
 
   res.json({
     totalVehicles,
@@ -84,7 +140,15 @@ router.get("/", async (req: AuthRequest, res) => {
       cost: totalCost,
       potentialMargin: totalPotentialMargin,
     },
+    // Nouvelles données des ventes réelles
+    sales: {
+      totalRevenue,
+      totalCosts: totalSoldCosts,
+      totalMargin: totalRealMargin,
+      history: salesHistory,
+    },
   });
 });
 
 export { router as dashboardRouter };
+
